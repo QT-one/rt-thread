@@ -1,7 +1,7 @@
 /*********************************************************************************************************//**
  * @file    ht32f5xxxx_flash.h
- * @version $Rev:: 5496         $
- * @date    $Date:: 2021-07-19 #$
+ * @version $Rev:: 7832         $
+ * @date    $Date:: 2024-07-05 #$
  * @brief   The header file of the FLASH library.
  *************************************************************************************************************
  * @attention
@@ -159,7 +159,7 @@ void FLASH_PrefetchBufferCmd(ControlStatus NewState);
 #if (LIBCFG_FMC_BRANCHCACHE)
 void FLASH_BranchCacheCmd(ControlStatus NewState);
 #endif
-void FLASH_SetRemappingMode(FLASH_Vector RemapMode);
+void FLASH_SetRemappingMode(FLASH_Vector FLASH_BOOT_x);
 FLASH_State FLASH_ErasePage(u32 PageAddress);
 FLASH_State FLASH_EraseOptionByte(void);
 FLASH_State FLASH_MassErase(void);

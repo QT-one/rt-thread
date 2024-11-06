@@ -1,7 +1,7 @@
 /*********************************************************************************************************//**
  * @file    ht32f5xxxx_tm.h
- * @version $Rev:: 7319         $
- * @date    $Date:: 2023-10-28 #$
+ * @version $Rev:: 7778         $
+ * @date    $Date:: 2024-06-21 #$
  * @brief   The header file of the TM library.
  *************************************************************************************************************
  * @attention
@@ -886,7 +886,9 @@ void TM_DecoderConfig(HT_TM_TypeDef* TMx, TM_SMSEL_Enum DecoderMod, TM_CHP_Enum 
 void TM_ForcedOREF(HT_TM_TypeDef* TMx, TM_CH_Enum TM_CH_n, TM_OM_Enum ForcedAction);
 void TM_CRRPreloadCmd(HT_TM_TypeDef* TMx, ControlStatus NewState);
 void TM_CHCCRPreloadConfig(HT_TM_TypeDef* TMx, TM_CH_Enum Channel, ControlStatus NewState);
+#if 0 // M0+ not supported
 void TM_ClearOREFConfig(HT_TM_TypeDef* TMx, TM_CH_Enum Channel, ControlStatus NewState);
+#endif
 void TM_ChPolarityConfig(HT_TM_TypeDef* TMx, TM_CH_Enum Channel, TM_CHP_Enum Pol);
 
 void TM_ImmActiveConfig(HT_TM_TypeDef* TMx, TM_CH_Enum Channel, ControlStatus NewState);

@@ -1,7 +1,7 @@
 /*********************************************************************************************************//**
  * @file    ht32f5xxxx_rtc.h
- * @version $Rev:: 7278         $
- * @date    $Date:: 2023-10-04 #$
+ * @version $Rev:: 7765         $
+ * @date    $Date:: 2024-06-19 #$
  * @brief   The header file of the RTC library.
  *************************************************************************************************************
  * @attention
@@ -107,7 +107,7 @@ typedef enum
   RTC_ROWM_LEVEL                   /*!< Level mode.                                                         */
 } RTC_ROWM_Enum;
 /**
- * @brief Waveform mode of RTC output
+ * @brief Event selection of RTC output
  */
 typedef enum
 {
@@ -161,7 +161,7 @@ typedef enum
  * @brief Used to check RTC_SRC_Enum parameter
  */
 #if (LIBCFG_LSE)
-#define IS_RTC_SRC_LSE(x)  (x == RTC_SRC_LSE)
+#define IS_RTC_SRC_LSE(x)  (x == RTC_SRC_LSE) 
 #else
 #define IS_RTC_SRC_LSE(x)  (0)
 #endif

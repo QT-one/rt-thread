@@ -1,0 +1,233 @@
+/*
+ * Copyright (c) 2006-2024, RT-Thread Development Team
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2024-07-11     QT-one       first version
+ */
+
+#include "ht32_usbd_int.h"
+
+#ifdef RT_USING_USB_DEVICE
+#include "ht32_usbd_core.h"
+
+/*
+    为了不破坏原本的usb_code文件中的USB中断回调函数
+    此处重构USB中断回调函数
+    除了重构USB的中断回调函数以外，还需要重写一些中断回调功能函数
+*/
+/*
+    RTT的USB中断回调过程如下
+    USB中断函数 -> USB中断回调函数 -> USB相关功能回调函数
+    -> RTT的USB相关功能回调函数 -> 结束USB中断
+    
+    RTT的USB程序运行流程（RTT的USB线程运行流程）
+    USB线程阻塞等待USB获取到消息队列中的消息
+    -> USB中断通过回调函数将接收到的消息传给USB的消息队列
+    -> RTT的USB相关功能回调函数获取到USB中断的消息，并设置USB消息队列的状态
+    -> USB退出中断，USB获取到消息后，线程阻塞被解除
+    -> USB线程根据获取的状态执行对应的功能
+    -> USB线程通过USB操作接口实现对应的功能
+    
+*/
+/*
+    根据RTT的USB中断回调过程和RTT的USB线程执行过程
+    得出完成USB驱动需要实现的两个重要部分
+    1、USB线程实现功能所需要的调用到的USB操作接口函数
+    2、USB中断回调过程使用到的RTT的USB驱动的函数的相关衔接部分
+    
+    除了以上两个比较重要的功能外，还需要完成以下的一些必要部分
+    1、USB初始化函数
+    2、USB设备注册函数
+    
+    完成以上功能主要涉及到两个文件为：
+    1、drv_usbd.c
+    2、ht32_usbd_int.c
+    
+    对两个文件的内容分配以及文件依赖如下：
+    drv_usbd.c
+        主要负责实现USB的操作接口的实现
+        以及初始化函数和USB设备注册函数
+        由于自定义的USB内核挂载点在该文件中
+        所以USB的中断函数也会写在该文件中
+        依赖：
+            ht32_usbd_core.c
+            ht32_usbd_int.c
+            以及RTT的相关文件
+    
+    ht32_usbd_int.c
+        主要负责实现USB中断回调以及回调函数
+        中和RTT的USB驱动函数相关衔接部分
+        该文件还会包含USB的初始配置函数以及
+        USB的休眠与唤醒的相关函数
+        依赖：
+            ht32_usbd_core.c
+            以及RTT的相关文件
+*/
+
+/* USB中断回调函数 */
+void usbd_code_irq_handler(USBDCore_TypeDef *pCore)
+{
+  u32 USBISRFlag = API_USB_GET_INT();
+  u32 USBEPTISRFlag;
+  USBD_EPTn_Enum EPTn;
+
+  #if (USBDCORE_DEBUG == 1)
+  u32 USBAddr = HT_USB->DEVAR;
+  #endif
+
+  /*--------------------------------------------------------------------------------------------------------*/
+  /* USB SOF Interrupt                                                                                      */
+  /*--------------------------------------------------------------------------------------------------------*/
+  if (API_USB_IS_SOF_INT(USBISRFlag))
+  {
+    __DBG_USBPrintf("%06ld SOF[%02d][%02lX]\r\n", ++__DBG_USBCount, pCore->Info.CurrentStatus, USBAddr);
+    if (pCore->Class.CallBack_StartOfFrame.func != NULL)
+    {
+      pCore->Class.CallBack_StartOfFrame.func(pCore->Class.CallBack_StartOfFrame.uPara);
+    }
+    API_USB_CLR_SOF_INT();
+  }
+
+  /*--------------------------------------------------------------------------------------------------------*/
+  /* USB SUSPEND Interrupt                                                                                  */
+  /*--------------------------------------------------------------------------------------------------------*/
+  if (API_USB_IS_SUSPEND_INT(USBISRFlag))
+  {
+    __DBG_USBPrintf("%06ld SUSPEND[%02d]\r\n", ++__DBG_USBCount, pCore->Info.CurrentStatus);
+    API_USB_CLR_SUSPEND_INT();
+    _USBDCore_Suspend(pCore);
+  }
+
+  /*--------------------------------------------------------------------------------------------------------*/
+  /* USB RESET Interrupt                                                                                    */
+  /*--------------------------------------------------------------------------------------------------------*/
+  if (API_USB_IS_RESET_INT(USBISRFlag))
+  {
+    if (API_USB_IS_FRES_INT(USBISRFlag))
+    {
+      API_USB_CLR_FRES_INT();
+    }
+    else
+    {
+      __DBG_USBPrintf("%06ld RESET[%02d][%02lX]\r\n", ++__DBG_USBCount, pCore->Info.CurrentStatus, USBAddr);
+      _USBDCore_Reset(pCore);
+      if (pCore->Class.CallBack_Reset.func != NULL)
+      {
+        pCore->Class.CallBack_Reset.func(pCore->Class.CallBack_Reset.uPara);
+      }
+    }
+    API_USB_CLR_RESET_INT();
+  }
+
+  /*--------------------------------------------------------------------------------------------------------*/
+  /* USB RESUME Interrupt                                                                                   */
+  /*--------------------------------------------------------------------------------------------------------*/
+  if (API_USB_IS_RESUME_INT(USBISRFlag))
+  {
+    __DBG_USBPrintf("%06ld RESUME\r\n", ++__DBG_USBCount);
+    _USBDCore_Resume(pCore);
+    API_USB_CLR_RESUME_INT();
+  }
+
+  /*--------------------------------------------------------------------------------------------------------*/
+  /* USB Endpoint 0 interrupt                                                                               */
+  /*--------------------------------------------------------------------------------------------------------*/
+  if (API_USB_IS_EPTn_INT(USBISRFlag, USBD_EPT0))
+  {
+    USBEPTISRFlag = API_USB_EPTn_GET_INT(USBD_EPT0);
+
+    /*------------------------------------------------------------------------------------------------------*/
+    /* Control SETUP Stage                                                                                  */
+    /*------------------------------------------------------------------------------------------------------*/
+    if (API_USB_IS_SETUP_INT(USBEPTISRFlag))
+    {
+      API_USB_READ_SETUP(&(pCore->Device.Request));               /* Read SETUP Command data from USB Buffer*/
+
+      __DBG_USBPrintf("%06ld SETUP\t[08]\r\n", ++__DBG_USBCount);
+      __DBG_USBDump((uc8 *)&(pCore->Device.Request), 8);
+
+      _USBDCore_Setup(pCore);
+      API_USB_CLR_SETUP_INT();                                    /* Clear SETUP Interrupt                  */
+    }
+
+    /*------------------------------------------------------------------------------------------------------*/
+    /* Control Endpoint 0 IN                                                                                */
+    /*------------------------------------------------------------------------------------------------------*/
+    if (API_USB_EPTn_IS_IN_INT(USBEPTISRFlag))
+    {
+      __DBG_USBPrintf("%06ld EP0IN\t[%02ld]", ++__DBG_USBCount, pCore->Device.Transfer.sByteLength);
+
+      _USBDCore_ControlIN(pCore);
+      API_USB_EPTn_CLR_IN_INT(USBD_EPT0);
+    }
+
+    /*------------------------------------------------------------------------------------------------------*/
+    /* Control Endpoint 0 OUT                                                                               */
+    /*------------------------------------------------------------------------------------------------------*/
+    if (API_USB_EPTn_IS_OUT_INT(USBEPTISRFlag))
+    {
+      __DBG_USBPrintf("%06ld EP0OUT\t[%02ld]", ++__DBG_USBCount, pCore->Device.Transfer.sByteLength);
+
+      /*----------------------------------------------------------------------------------------------------*/
+      /* Clear interrupt flag before USBDCore_ControlOUT is meaning since USBDCore_ControlOUT clear NAKRX   */
+      /* bit which will cause another interrupt occur.                                                      */
+      /*----------------------------------------------------------------------------------------------------*/
+      API_USB_EPTn_CLR_OUT_INT(USBD_EPT0);
+      _USBDCore_ControlOUT(pCore);
+    }
+
+    /*------------------------------------------------------------------------------------------------------*/
+    /* Clear Control Endpoint 0 global interrupt                                                            */
+    /*------------------------------------------------------------------------------------------------------*/
+    API_USB_CLR_EPTn_INT(USBD_EPT0);
+
+  } /* if (API_USB_IS_EP_INT(USBISRFlag, USBD_EPT0))                                                        */
+
+
+  /*--------------------------------------------------------------------------------------------------------*/
+  /* USB Endpoint n call back function                                                                      */
+  /*--------------------------------------------------------------------------------------------------------*/
+  while ((EPTn = API_USB_GET_EPT_NUM(API_USB_GET_INT())) != USBD_NOEPT)
+  {
+    USBEPTISRFlag = API_USB_EPTn_GET_INT((USBD_EPTn_Enum)EPTn);
+
+    if (API_USB_EPTn_IS_INT(USBEPTISRFlag))
+    {
+      API_USB_EPTn_CLR_INT(EPTn);
+      API_USB_CLR_EPTn_INT(EPTn);
+
+      if (pCore->Class.CallBack_EPTn[EPTn] != NULL)
+      {
+        pCore->Class.CallBack_EPTn[EPTn](EPTn);
+      }
+    }
+  } /* while ((EPTn = API_USB_GET_EPTn_NUM(API_USB_GET_INT())) != USBD_NOEPT)                               */
+
+  return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#endif /* RT_USING_USB_DEVICE */

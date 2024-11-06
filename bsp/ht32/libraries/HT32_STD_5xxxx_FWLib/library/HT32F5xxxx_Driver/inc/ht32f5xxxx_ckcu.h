@@ -1,7 +1,7 @@
 /*********************************************************************************************************//**
  * @file    ht32f5xxxx_ckcu.h
- * @version $Rev:: 7108         $
- * @date    $Date:: 2023-08-09 #$
+ * @version $Rev:: 7759         $
+ * @date    $Date:: 2024-06-11 #$
  * @brief   The header file of the Clock Control Unit library.
  *************************************************************************************************************
  * @attention
@@ -699,9 +699,6 @@ typedef enum
 #define IS_USBPLL_CFG(CFG)      (((CFG & 0xFFFFF81F) == 0x0) && (CFG != 0))
 #endif
 
-
-
-
 /* Definitions of MCU debug control                                                                         */
 #define CKCU_DBG_SLEEP          (1UL)
 #define CKCU_DBG_DEEPSLEEP1     (1UL << 1)
@@ -828,6 +825,11 @@ typedef enum
 #if (LIBCFG_CKCU_HSIRDYCR)
 #define IS_COUNTER_VALUE(VALUE) ((VALUE) < 0x20)
 #endif
+
+/* HSE Gain mode                                                                                            */
+#define CKCU_HSE_LOW_GAIN_MODE          (0UL << 8)
+#define CKCU_HSE_HIGH_GAIN_MODE         (1UL << 8)
+
 /**
   * @}
   */
@@ -914,8 +916,11 @@ bool CKCU_HSIAutoTrimIsReady(void);
 #endif
 
 #if (LIBCFG_CKCU_HSIRDYCR)
-void CKCU_Set_HSIReadyCounter(u8 value);
+void CKCU_SetHSIReadyCounter(u8 value);
 #endif
+
+void CKCU_SetHSEGainMode(u32 GanMode);
+
 /**
   * @}
   */

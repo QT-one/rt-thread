@@ -1,7 +1,7 @@
 /*********************************************************************************************************//**
  * @file    ht32f5xxxx_pwrcu.c
- * @version $Rev:: 6386         $
- * @date    $Date:: 2022-10-27 #$
+ * @version $Rev:: 7764         $
+ * @date    $Date:: 2024-06-19 #$
  * @brief   This file provides all the Power Control Unit firmware functions.
  *************************************************************************************************************
  * @attention
@@ -105,7 +105,6 @@
 #define LVDS_MASK         0xFFB9FFFF
 #define VREG_V_MASK       0xF3FFFFFF
 #define VREG_M_MASK       0xFCFFFFFF
-#define PWRRST_SET        0x1
 /**
   * @}
   */

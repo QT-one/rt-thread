@@ -1,7 +1,7 @@
 /*********************************************************************************************************//**
  * @file    ht32f5xxxx_ckcu.c
- * @version $Rev:: 7322         $
- * @date    $Date:: 2023-10-28 #$
+ * @version $Rev:: 7793         $
+ * @date    $Date:: 2024-06-27 #$
  * @brief   This file provides all the Clock Control Unit firmware functions.
  *************************************************************************************************************
  * @attention
@@ -151,6 +151,9 @@
 
 #define CKCU_POS_REFCLKSEL      (5)
 #define CKCU_MASK_REFCLKSEL     ((u32)0x3 << CKCU_POS_REFCLKSEL)
+
+#define IS_GAINMODE(GanMode)    ((GanMode == CKCU_HSE_LOW_GAIN_MODE) || \
+                                 (GanMode == CKCU_HSE_HIGH_GAIN_MODE))
 
 /**
   * @}
@@ -673,7 +676,7 @@ void CKCU_SetPeripPrescaler(CKCU_PeripPrescaler_TypeDef Perip, CKCU_APBCLKPRE_Ty
     Prescaler -= 2;
   }
   Perip &= 0x0000001F;
-  CKCU_BF_WRITE(*PCSR, (3UL << Perip), Perip, Prescaler);
+  CKCU_BF_WRITE(*PCSR, (3UL << Perip), Perip, (Prescaler & 0x3));
 }
 #endif
 
@@ -1083,7 +1086,7 @@ bool CKCU_HSIAutoTrimIsReady(void)
  * @param Value: 0x0~0x1F.
  * @retval None
  ************************************************************************************************************/
-void CKCU_Set_HSIReadyCounter(u8 Value)
+void CKCU_SetHSIReadyCounter(u8 Value)
 {
   /* Check the parameters                                                                                   */
   Assert_Param(IS_COUNTER_VALUE(Value));
@@ -1091,6 +1094,23 @@ void CKCU_Set_HSIReadyCounter(u8 Value)
   HT_CKCU->HSIRDYCR = ((HT_CKCU->HSIRDYCR) & (~(0x1F))) | Value;
 }
 #endif
+
+/*********************************************************************************************************//**
+ * @brief Set HSE Gain Mode.
+ * @param GanMode: Specify the gain mode of HSE.
+ *        This parameter can be:
+ *        @arg CKCU_HSE_LOW_GAIN_MODE         : HSE low gain mode
+ *        @arg CKCU_HSE_HIGH_GAIN_MODE        : HSE high gain mode
+ * @retval None
+ ************************************************************************************************************/
+void CKCU_SetHSEGainMode(u32 GanMode)
+{
+  /* Check the parameters                                                                                   */
+  Assert_Param(IS_GAINMODE(GanMode));
+
+  HT_CKCU->GCCR = (HT_CKCU->GCCR & ~(0x100)) | GanMode;
+}
+
 /**
   * @}
   */

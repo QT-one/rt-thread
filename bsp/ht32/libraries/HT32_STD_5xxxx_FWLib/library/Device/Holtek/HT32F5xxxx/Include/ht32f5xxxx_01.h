@@ -1,8 +1,8 @@
 /***************************************************************************//**
  * @file    ht32f5xxxx_01.h
  * @brief   CMSIS Cortex-M0+ Device Peripheral Access Layer Header File
- * @version $Rev:: 7319         $
- * @date    $Date:: 2023-10-28 #$
+ * @version $Rev:: 7948         $
+ * @date    $Date:: 2024-08-08 #$
  *
  * @note
  * Copyright (C) Holtek Semiconductor Inc. All rights reserved.
@@ -255,9 +255,7 @@ typedef enum IRQn
   ADC0_IRQn               = 8,      /*!< ADC0 Interrupt                                                     */
   #if defined(USE_HT32F65230_40)
   ADC1_IRQn               = 9,      /*!< ADC1 Interrupt                                                     */
-  #elif defined(USE_HT32F66242)
-  CORDIC_IRQn             = 9,      /*!< CORDIC global Interrupt                                            */
-  #elif defined(USE_HT32F66246)
+  #elif defined(USE_HT32F66242) || defined(USE_HT32F66246)
   CORDIC_IRQn             = 9,      /*!< CORDIC global Interrupt                                            */
   #endif
   MCTM0_BRK_IRQn          = 10,     /*!< MCTM BRK Interrupt                                                 */
@@ -272,9 +270,7 @@ typedef enum IRQn
   CMP1_IRQn               = 19,     /*!< Comparator1 Interrupt                                              */
   #if defined(USE_HT32F65230_40)
   CMP2_IRQn               = 20,     /*!< Comparator2 Interrupt                                              */
-  #elif defined(USE_HT32F66242)
-  PID_IRQn                = 20,     /*!< PID global Interrupt                                               */
-  #elif defined(USE_HT32F66246)
+  #elif defined(USE_HT32F66242) || defined(USE_HT32F66246)
   PID_IRQn                = 20,     /*!< PID global Interrupt                                               */
   #endif
   I2C0_IRQn               = 21,     /*!< I2C global Interrupt                                               */
@@ -403,7 +399,7 @@ typedef enum IRQn
   USB_IRQn                = 29,     /*!< USB interrupt                                                      */
   #endif
   #if defined(USE_HT32F54231_41) || defined(USE_HT32F54243_53) || defined(USE_HT32F50020_30) || defined(USE_HT32F53231_41) || defined(USE_HT32F53242_52) || defined(USE_HT32F50431_41) || defined(USE_HT32F50442_52)
-  LEDC_IRQn               = 29,     /*!< LEDC global Interrupt                                              */
+  LEDC_IRQn               = 29,     /*!< LEDC global Interrupt                                              */  
   #endif
   #if defined(USE_HT32F52342_52) || defined(USE_HT32F52243_53) || defined(USE_HT32F5826) || defined(USE_HT32F0008) || defined(USE_HT32F52344_54) || defined(USE_HT32F0006) || defined(USE_HT32F52357_67) || defined(USE_HT32F57342_52) || defined(USE_HT32F50343) || defined(USE_HT32F54243_53) || defined(USE_HT32F61244_45) || defined(USE_HT32F67041_51) || defined(USE_HT32F53231_41) || defined(USE_HT32F53242_52) || defined(USE_HT32F50431_41) || defined(USE_HT32F50442_52) || defined(USE_HT32F52234_44)
   PDMACH0_1_IRQn          = 30,     /*!< PDMA channel 0-1 interrupt                                         */
@@ -538,13 +534,18 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} ErrStatus;
 
 #if defined (__CC_ARM)
   #define __ALIGN4 __align(4)
+#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050) && (__ARMCC_VERSION < 6100100)
+  #define __ALIGN4  __attribute__((aligned(4)))
 #elif defined (__ICCARM__)
   #define __ALIGN4 _Pragma("data_alignment = 4")
 #elif defined (__GNUC__)
   #define __ALIGN4  __attribute__((aligned(4)))
 #endif
 
-#if defined (__GNUC__)
+#if defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050) && (__ARMCC_VERSION < 6100100)
+  #define __PACKED_H
+  #define __PACKED_F __attribute__ ((packed))
+#elif defined (__GNUC__)
   #define __PACKED_H
   #define __PACKED_F __attribute__ ((packed))
 #elif defined (__ICCARM__) || (__CC_ARM)
@@ -675,7 +676,8 @@ typedef struct
 {
                                  /* ADC0: 0x40010000                                                        */
                                  /* ADC1: 0x40050000                                                        */
-  __IO uint32_t CFGR;            /*!< 0x000         ADC Configuration Register (ADC1 only)                  */
+  __IO uint32_t CFGR;            /*!< 0x000         ADC Configuration Register (ADC1 only for specific      */
+                                 /*!                model)                                                  */
   __IO uint32_t RST;             /*!< 0x004         ADC Reset Register                                      */
   __IO uint32_t CONV;            /*!< 0x008         ADC Regular Conversion Mode Register                    */
   __IO uint32_t HCONV;           /*!< 0x00C         ADC High-priority Conversion Mode Register              */
@@ -695,11 +697,7 @@ typedef struct
   __IO uint32_t STR[15];         /*!< 0x070 - 0x0A8 ADC Input Sampling Time Register 0-14                   */
        uint32_t RESERVE3[1];     /*!< 0x0AC         Reserved                                                */
   #endif
-  #if defined(USE_HT32F66242)
-       uint32_t RESERVE2[16];    /*!< 0x030 - 0x06C Reserved                                                */
-  __IO uint32_t STR[16];         /*!< 0x070 - 0x0AC ADC Input Sampling Time Register 0-15                   */
-  #endif
-  #if defined(USE_HT32F66246)
+  #if defined(USE_HT32F66242) || defined(USE_HT32F66246)
        uint32_t RESERVE2[16];    /*!< 0x030 - 0x06C Reserved                                                */
   __IO uint32_t STR[16];         /*!< 0x070 - 0x0AC ADC Input Sampling Time Register 0-15                   */
   #endif
@@ -726,15 +724,7 @@ typedef struct
   __IO uint32_t DIESR;           /*!< 0x150         Dual ADC Interrupt Enable/Status Register (ADC1 only)   */
   __IO uint32_t DPDMAR;          /*!< 0x154         Dual ADC PDMA Request Register (ADC1 only)              */
   #endif
-  #if defined(USE_HT32F66242)
-       uint32_t RESERVE8[3];     /*!< 0x144 - 0x14C Reserved                                                */
-  __IO uint32_t VREFCR;          /*!< 0x150         ADC Reference Voltage Control Register                  */
-       uint32_t RESERVE9[3];     /*!< 0x154 - 0x15C Reserved                                                */
-  __IO uint32_t HDR4[8];         /*!< 0x160 - 0x17C ADC High-priority Conversion Data Register 4-11         */
-       uint32_t RESERVE10[4];    /*!< 0x180 - 0x18C Reserved                                                */
-  __IO uint32_t STR16[2];        /*!< 0x190 - 0x194 ADC Input Sampling Time Register 16-17                  */
-  #endif
-  #if defined(USE_HT32F66246)
+  #if defined(USE_HT32F66242) || defined(USE_HT32F66246)
        uint32_t RESERVE8[3];     /*!< 0x144 - 0x14C Reserved                                                */
   __IO uint32_t VREFCR;          /*!< 0x150         ADC Reference Voltage Control Register                  */
        uint32_t RESERVE9[3];     /*!< 0x154 - 0x15C Reserved                                                */
@@ -909,7 +899,7 @@ typedef struct
   __IO uint32_t DOUTR;           /*!< 0x020         Data Output Register                                    */
   __IO uint32_t SRR;             /*!< 0x024         Output Set and Reset Control Register                   */
   __IO uint32_t RR;              /*!< 0x028         Output Reset Control Register                           */
-  #if defined(USE_HT32F50220_30) || defined(USE_HT32F50231_41) || defined(USE_HT32F54231_41) || defined(USE_HT32F54243_53) || defined(USE_HT32F53231_41) || defined(USE_HT32F53242_52) || defined(USE_HT32F50431_41) || defined(USE_HT32F50442_52)
+  #if defined(USE_HT32F50020_30) || defined(USE_HT32F50220_30) || defined(USE_HT32F50231_41) 
   __IO uint32_t SCER;            /*!< 0x02C         Sink Current Enhanced Selection Register                */
   #endif
 } HT_GPIO_TypeDef;
@@ -961,7 +951,7 @@ typedef struct
   __IO uint32_t CFGR6;           /*!< 0x018         EXTI Interrupt 6 Configuration Register                 */
   __IO uint32_t CFGR7;           /*!< 0x01C         EXTI Interrupt 7 Configuration Register                 */
   #if defined(USE_HT32F50020_30)
-  __IO uint32_t RESERVE0[8];     /*!< 0x020 - 0x3C  Reserved                                                */
+  __IO uint32_t RESERVE0[8];     /*!< 0x020 - 0x3C  Reserved                                                */  
   #else
   __IO uint32_t CFGR8;           /*!< 0x020         EXTI Interrupt 8 Configuration Register                 */
   __IO uint32_t CFGR9;           /*!< 0x024         EXTI Interrupt 9 Configuration Register                 */
@@ -1055,7 +1045,7 @@ typedef struct
   __IO uint32_t LVDCSR;          /*!< 0x010         Low Voltage/Brown Out Detect Control and Status Register*/
   #if defined(USE_HT32F57342_52)
        uint32_t RESERVE2[2];     /*!< 0x014 ~ 0x18  Reserved                                                */
-  __IO uint32_t LDOSR   ;        /*!< 0x01C         Power Control LDO Status Register                       */
+  __IO uint32_t LDOSR;           /*!< 0x01C         Power Control LDO Status Register                       */
   #endif
   #if defined(USE_HT32F52342_52) || defined(USE_HT32F5826) || defined(USE_HT32F52357_67)
        uint32_t RESERVE3[59];    /*!< 0x014 ~ 0x0FC Reserved                                                */
@@ -1180,7 +1170,7 @@ typedef struct
   #else
        uint32_t RESERVED3[2];  /*!< 0x040 ~ 0x44 Reserved                                                */
   #endif
-  #if defined(USE_HT32F0008) || defined(USE_HT32F50220_30) || defined(USE_HT32F50231_41) || defined(USE_HT32F0006) || defined(USE_HT32F52357_67) || defined(USE_HT32F57342_52) || defined(USE_HT32F57331_41) || defined(USE_HT32F50343) || defined(USE_HT32F54231_41) || defined(USE_HT32F54243_53) || defined(USE_HT32F61244_45) || defined(USE_HT32F53231_41) || defined(USE_HT32F53242_52) || defined(USE_HT32F50431_41) || defined(USE_HT32F50442_52)
+  #if defined(USE_HT32F0008) || defined(USE_HT32F50220_30) || defined(USE_HT32F50231_41) || defined(USE_HT32F0006) || defined(USE_HT32F52357_67) || defined(USE_HT32F57342_52) || defined(USE_HT32F57331_41) || defined(USE_HT32F50343) || defined(USE_HT32F54231_41) || defined(USE_HT32F54243_53) || defined(USE_HT32F61244_45) || defined(USE_HT32F53231_41) || defined(USE_HT32F53242_52) || defined(USE_HT32F50431_41) || defined(USE_HT32F50442_52) || defined(USE_HT32F66242) || defined(USE_HT32F66246)
   __IO uint32_t APBPCSR2;        /*!< 0x048         APB Peripheral Clock Selection Register 2               */
        uint32_t RESERVED4[173];  /*!< 0x04C ~ 0x2FC Reserved                                                */
   #elif defined(USE_HT32F52234_44)
@@ -1190,7 +1180,7 @@ typedef struct
   #else
        uint32_t RESERVED4[174];  /*!< 0x048 ~ 0x2FC Reserved                                                */
   #endif
-  #if !defined(USE_HT32F50020_30)
+  #if !defined(USE_HT32F50020_30) && !defined(USE_HT32F66242) && !defined(USE_HT32F66246)
   __IO uint32_t LPCR;            /*!< 0x300         Low Power Control Register                              */
   #else
        uint32_t RESERVED5;       /*!< 0x300         Reserved                                                */
@@ -1443,7 +1433,7 @@ typedef struct
   __IO uint32_t EP9IER;          /*!< 0x0CC USB Endpoint 9 Interrupt Enable Register                        */
   __IO uint32_t EP9ISR;          /*!< 0x0D0 USB Endpoint 9 Interrupt Status Register                        */
   __IO uint32_t EP9TCR;          /*!< 0x0D4 USB Endpoint 9 Transfer Count Register                          */
-  __IO uint32_t EP9CFGR;         /*!< 0x0D8 USB Endpoint 9 Configuration Register                           */
+  __IO uint32_t EP9CFGR;         /*!< 0x0D8 USB Endpoint 9 Configuration Register                           */ 
   #endif
 } HT_USB_TypeDef;
 
@@ -1777,7 +1767,7 @@ typedef struct
   #endif
   #if defined(USE_HT32F54243_53)
   __IO uint32_t DR[12];          /*!< 0x018 - 0x044 LED Data Register                                       */
-  #endif
+  #endif  
 } HT_LEDC_TypeDef;
 
 
@@ -1798,6 +1788,7 @@ typedef struct
   __IO uint32_t DB0R;            /*!< 0x024         CAN Interface Data B 0 Register                         */
   __IO uint32_t DB1R;            /*!< 0x028         CAN Interface Data B 1 Register                         */
 } HT_CANIF_TypeDef;
+
 
 /**
  * @brief Controller Area Network Global
@@ -1830,6 +1821,7 @@ typedef struct
   __IO uint32_t    MVR1;         /*!< 0x164         Message Valid Register 1                                */
 } HT_CAN_TypeDef;
 
+
 /**
  * @brief Coordinate Rotation Digital Computer
  */
@@ -1840,6 +1832,7 @@ typedef struct
   __IO uint32_t    WDATA;        /*!< 0x004         Argument Register                                       */
   __IO uint32_t    RDATA;        /*!< 0x008         Result Register                                         */
 } HT_CORDIC_TypeDef;
+
 
 /**
  * @brief Proportional Integral Derivative controller
@@ -1903,6 +1896,7 @@ typedef struct
 /**
   * @}
   */
+
 
 /**
  * @brief RF
@@ -2694,9 +2688,9 @@ typedef struct
   #define GPTM0_IRQn             GPTM0_G_IRQn
   #define GPTM0_IRQHandler       GPTM0_G_IRQHandler
   #define MCTM0_IRQn             MCTM0_UP_IRQn
-  #define MCTM0_IRQHandler       MCTM0_G_IRQHandler
+  #define MCTM0_IRQHandler       MCTM0_UP_IRQHandler
   #define MCTM1_IRQn             MCTM1_UP_IRQn
-  #define MCTM1_IRQHandler       MCTM1_G_IRQHandler
+  #define MCTM1_IRQHandler       MCTM1_UP_IRQHandler
 #endif
 
 #define AFIO_ESS_Enum            u32

@@ -1,7 +1,7 @@
 /*********************************************************************************************************//**
  * @file    ht32f66246_libcfg.h
- * @version $Rev:: 7184         $
- * @date    $Date:: 2023-08-31 #$
+ * @version $Rev:: 7924         $
+ * @date    $Date:: 2024-08-07 #$
  * @brief   The library configuration file.
  *************************************************************************************************************
 * @attention
@@ -46,6 +46,7 @@
 
 #define LIBCFG_ADC_NO_OFFSET_REG          (1)
 #define LIBCFG_GPIOC                      (1)
+#define LIBCFG_CKCU_NO_LPCR               (1)
 #define LIBCFG_NO_PWRCU_TEST_REG          (1)
 #define LIBCFG_PDMA                       (1)
 

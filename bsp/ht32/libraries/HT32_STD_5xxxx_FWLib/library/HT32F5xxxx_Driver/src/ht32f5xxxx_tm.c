@@ -1,7 +1,7 @@
 /*********************************************************************************************************//**
  * @file    ht32f5xxxx_tm.c
- * @version $Rev:: 7059         $
- * @date    $Date:: 2023-07-27 #$
+ * @version $Rev:: 7886         $
+ * @date    $Date:: 2024-07-22 #$
  * @brief   This file provides all the TM firmware functions.
  *************************************************************************************************************
  * @attention
@@ -67,7 +67,8 @@
 #define CTR_CHCCDS          0x00010000ul
 
 #define CH0ICFR_CH0SRC      0x80000000ul
-#define CHICFR_CHF_MASK     ~0x000000FFul
+#define CHICFR_CHF_MASK     ~0x000000FFul   /* CHF Mask for CHICFR, varies by model.
+                                               Using ~0x000000FFul for all model.                           */
 #define CHICFR_CHCCS_MASK   ~0x00030000ul
 #define CHICFR_CHPSC_MASK   ~0x000C0000ul
 
@@ -903,6 +904,7 @@ void TM_CHCCRPreloadConfig(HT_TM_TypeDef* TMx, TM_CH_Enum Channel, ControlStatus
   }
 }
 
+#if 0
 /*********************************************************************************************************//**
  * @brief Clear or Safeguard the CHxOREF signal when ETI is active.
  * @param TMx: where TMx is the selected TM from the TM peripheral.
@@ -934,6 +936,7 @@ void TM_ClearOREFConfig(HT_TM_TypeDef* TMx, TM_CH_Enum Channel, ControlStatus Ne
     *pOcfr &= ~CHOCFR_REFCE;
   }
 }
+#endif
 
 /*********************************************************************************************************//**
  * @brief Configure polarity of the TMx channel N.
