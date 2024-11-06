@@ -641,8 +641,10 @@ rt_ssize_t rt_mq_recv_prio(rt_mq_t mq,
 /**@}*/
 
 /* defunct */
+void rt_thread_defunct_init(void);
 void rt_thread_defunct_enqueue(rt_thread_t thread);
 rt_thread_t rt_thread_defunct_dequeue(void);
+void rt_defunct_execute(void);
 
 /*
  * spinlock
@@ -710,6 +712,10 @@ rt_err_t  rt_device_control(rt_device_t dev, int cmd, void *arg);
  */
 void rt_interrupt_enter(void);
 void rt_interrupt_leave(void);
+
+void rt_interrupt_context_push(rt_interrupt_context_t this_ctx);
+void rt_interrupt_context_pop(void);
+void *rt_interrupt_context_get(void);
 
 /**
  * CPU object
@@ -787,6 +793,7 @@ rt_device_t rt_console_get_device(void);
 #endif /* defined(RT_USING_DEVICE) && defined(RT_USING_CONSOLE) */
 
 int __rt_ffs(int value);
+unsigned long __rt_ffsl(unsigned long value);
 
 void rt_show_version(void);
 
@@ -801,7 +808,7 @@ if (!(EX))                                                                    \
     rt_assert_handler(#EX, __FUNCTION__, __LINE__);                           \
 }
 #else
-#define RT_ASSERT(EX)
+#define RT_ASSERT(EX) {RT_UNUSED(EX);}
 #endif /* RT_DEBUGING_ASSERT */
 
 #ifdef RT_DEBUGING_CONTEXT

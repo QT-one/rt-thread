@@ -21,15 +21,10 @@ env['ASCOM'] = env['ASPPCOM']
 
 Export('RTT_ROOT')
 Export('rtconfig')
-rtconfig.CPU='virt64'
-rtconfig.ARCH='risc-v'
 
 SDK_ROOT = os.path.abspath('./')
 
-if os.path.exists(SDK_ROOT + '/drivers'):
-    drivers_path_prefix = SDK_ROOT + '/drivers'
-else:
-    drivers_path_prefix = os.path.dirname(SDK_ROOT) + '/drivers'
+drivers_path_prefix = os.path.dirname(SDK_ROOT) + '/drivers'
 
 # prepare building environment
 objs = PrepareBuilding(env, RTT_ROOT, has_libcpu = False)
