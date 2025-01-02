@@ -188,6 +188,7 @@ jobs:
                 - "stm32/stm32g474-st-nucleo"
                 - "stm32/stm32h563-st-nucleo"
                 - "stm32/stm32h503-st-nucleo"
+                - "stm32/stm32h723-st-nucleo"
                 - "stm32/stm32h743-armfly-v7"
                 - "stm32/stm32h743-atk-apollo"
                 - "stm32/stm32h743-openmv-h7plus"
@@ -303,14 +304,9 @@ jobs:
                 - "apm32/apm32e103ze-evalboard"
                 - "apm32/apm32e103ze-tinyboard"
                 - "apm32/apm32s103vb-miniboard"
-         -  RTT_BSP: "nordic_Infineon_TI_microchip" 
+         -  RTT_BSP: "Infineon_TI_microchip" 
             RTT_TOOL_CHAIN: "sourcery-arm"
             SUB_RTT_BSP:  
-                - "nrf5x/nrf51822"
-                - "nrf5x/nrf52832"
-                - "nrf5x/nrf52833"
-                - "nrf5x/nrf52840"
-                - "nrf5x/nrf5340"
                 - "Infineon/psoc6-cy8ckit-062S2-43012"
                 - "Infineon/psoc6-cy8ckit-062-BLE"
                 - "Infineon/psoc6-cy8ckit-062s4"
@@ -347,7 +343,7 @@ jobs:
                 - "qemu-virt64-aarch64"
                 - "raspberry-pi/raspi3-64"
                 - "raspberry-pi/raspi4-64"
-                - "rockchip/rk3568"
+                #- "rockchip/rk3568"   too long
                 - "phytium/aarch64"
          -  RTT_BSP: "riscv-none" 
             RTT_TOOL_CHAIN: "sourcery-riscv-none-embed"
@@ -387,6 +383,14 @@ jobs:
             RTT_TOOL_CHAIN: "sourcery-i386-unknown-elf"
             SUB_RTT_BSP:  
                 - "x86"
+         -  RTT_BSP: "nordic(yml)"
+            RTT_TOOL_CHAIN: "sourcery-arm"
+            SUB_RTT_BSP:
+                - "nrf5x/nrf51822"
+                - "nrf5x/nrf52832"
+                - "nrf5x/nrf52833"
+                - "nrf5x/nrf52840"
+                - "nrf5x/nrf5340"
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
